@@ -14,6 +14,8 @@ class Zsession:
         self.write=write
         self.session_metadata = dict()
         self.session_metadata['chunks'] = list()
+        self.session_metadata['channels'] = list()
+        self.session_metadata['segments'] = list()
 
 
     def __enter__(self):
@@ -68,6 +70,10 @@ class Zsession:
             raise Exception(f"Chunk already exists: {chunk_pth}!")
 
         self.session_metadata['chunks'].append(str(f"{segment_name}/" + f"{channel_metadata['name']}.zdat"))
+        if channel_metadata['name'] not in self.session_metadata['channels']:
+            self.session_metadata['channels'].append(channel_metadata['name'])
+        if segment_name not in self.session_metadata['segments']:
+            self.session_metadata['segments'].append(segment_name)
 
         channel_metadata['compressed_data'], channel_metadata['original_md5'], channel_metadata['compressed_md5'] = compress_array(data)
         with open(str(chunk_pth), 'wb') as f:
@@ -116,6 +122,10 @@ class TestZsession(unittest.TestCase):
         zses = Zsession.open("test_session.zses")
         for data in zses.iter_chunks(hash_check=True):
             stop = 1
+
+    def test_read_ts_channel_basic_info(self):
+        zses = Zsession.open("test_session.zses")
+        print(zses.read_ts_channel_basic_info())
 
 
 
