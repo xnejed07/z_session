@@ -10,10 +10,10 @@ import unittest
 
 class Zsession:
     def __init__(self, path=None, write=False):
+        self.path = pathlib.Path(path) if path is not None else None
         self.write=write
         self.session_metadata = dict()
         self.session_metadata['chunks'] = list()
-        self.path = pathlib.Path(path) if path is not None else None
 
 
     def __enter__(self):
@@ -67,6 +67,8 @@ class Zsession:
         if not exist_ok and chunk_pth.exists():
             raise Exception(f"Chunk already exists: {chunk_pth}!")
 
+        self.session_metadata['chunks'].append(str(f"{segment_name}/" + f"{channel_metadata['name']}.zdat"))
+
         channel_metadata['compressed_data'], channel_metadata['original_md5'], channel_metadata['compressed_md5'] = compress_array(data)
         with open(str(chunk_pth), 'wb') as f:
             f.write(bson.dumps(channel_metadata))
@@ -85,6 +87,14 @@ class Zsession:
                     if hashlib.md5(data['data']).hexdigest() != data['original_md5']:
                         raise Exception("MD5 hash check failed!")
             yield data
+
+    def read_ts_channel_basic_info(self):
+        return self.session_metadata
+
+
+    def read_ts_channels_uutc(self,channel_map, uutc_map):
+        pass
+
 
 
 class TestZsession(unittest.TestCase):
