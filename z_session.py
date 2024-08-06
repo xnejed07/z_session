@@ -6,6 +6,7 @@ import json
 import glob
 import bson
 import hashlib
+import unittest
 
 class Zsession:
     def __init__(self, path=None, write=False):
@@ -86,24 +87,33 @@ class Zsession:
             yield data
 
 
+class TestZsession(unittest.TestCase):
+
+    def test_new(self):
+        with Zsession.new("test_session.zses", exist_ok=True) as zses:
+            for segment_name in ['segment-001', 'segment-002']:
+                for ch_name in ['ch1', 'ch2', 'ch3']:
+                    random_data = np.array(np.around(np.random.randn(60 * 5000 * 30)), dtype=np.int64)
+                    zses.new_chunk(segment_name=segment_name,
+                                   channel_metadata={'name': ch_name,
+                                                     'fsamp': 5000,
+                                                     'uutc_start': 0,
+                                                     'uutc_end': 1000000},
+                                   data=random_data,
+                                   exist_ok=True)
+
+    def test_open(self):
+        zses = Zsession.open("test_session.zses")
+        for data in zses.iter_chunks(hash_check=True):
+            stop = 1
+
+
+
 if __name__ == "__main__":
-
-    with Zsession.new("test_session.zses",exist_ok=True) as zses:
-        for segment_name in ['segment-001','segment-002']:
-            for ch_name in ['ch1','ch2','ch3']:
-                random_data = np.array(np.around(np.random.randn(60*5000*30)),dtype=np.int64)
-                zses.new_chunk(segment_name=segment_name,
-                               channel_metadata={'name':ch_name,
-                                                 'fsamp':5000,
-                                                 'uutc_start':0,
-                                                 'uutc_end':1000000},
-                               data=random_data,
-                               exist_ok=True)
+    unittest.main()
 
 
 
 
 
-    zses = Zsession.open("test_session.zses")
-    for data in zses.iter_chunks(hash_check=True):
-        stop = 1
+
