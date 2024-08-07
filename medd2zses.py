@@ -6,11 +6,12 @@ from z_session import Zsession
 def iter_segments(sess, chunk_size_samples=5000*60):
     bi = sess.read_ts_channel_basic_info()
     channels = [k['name'] for k in bi]
-    uutc_start = bi[0]['start_time']
-    uutc_stop = bi[0]['end_time']
+    uutc_start_time = bi[0]['start_time']
+    uutc_stop_time = bi[0]['end_time']
     fsamp = bi[0]['fsamp']
     for ch in channels:
-        data,time = sess.read_ts_channels_uutc(channel_map=[ch],uutc_map=[uutc_start,uutc_stop])
+        print(ch)
+        data,time = sess.read_ts_channels_uutc(channel_map=[ch],uutc_map=[uutc_start_time,uutc_stop_time])
         data = np.array(data)
         for idx0 in range(0,data.shape[1],chunk_size_samples):
             idx1 = idx0 + chunk_size_samples
