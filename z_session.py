@@ -61,6 +61,8 @@ class Zsession:
             raise Exception("Fsamp is required!")
         if 'uutc_start' not in channel_metadata:
             raise Exception("Uutc_start is required!")
+        if 'uutc_end' not in channel_metadata:
+            raise Exception("Uutc_end is required!")
         channel_metadata['dtype'] = str(data.dtype)
         channel_metadata['shape'] = data.shape
 
@@ -72,8 +74,10 @@ class Zsession:
         self.session_metadata['chunks'].append(str(f"{segment_name}/" + f"{channel_metadata['name']}.zdat"))
         if channel_metadata['name'] not in self.session_metadata['channels']:
             self.session_metadata['channels'].append(channel_metadata['name'])
-        if segment_name not in self.session_metadata['segments']:
-            self.session_metadata['segments'].append(segment_name)
+        if segment_name not in [x['segment'] for x in self.session_metadata['segments']]:
+            self.session_metadata['segments'].append({'segment':segment_name,
+                                                      'uutc_start':channel_metadata['uutc_start'],
+                                                      'uutc_end':channel_metadata['uutc_end']})
 
         channel_metadata['compressed_data'], channel_metadata['original_md5'], channel_metadata['compressed_md5'] = compress_array(data)
         with open(str(chunk_pth), 'wb') as f:
@@ -126,6 +130,11 @@ class TestZsession(unittest.TestCase):
     def test_read_ts_channel_basic_info(self):
         zses = Zsession.open("test_session.zses")
         print(zses.read_ts_channel_basic_info())
+
+    def test_iter_chunks(self):
+        zses = Zsession.open("test_session.zses")
+        for data in zses.iter_chunks(hash_check=True):
+            stop = 1
 
 
 
