@@ -31,22 +31,17 @@ class MedSessionWrapper:
         self.session.set_reference_channel(channel_map[0])
         mat = self.session.get_matrix_by_time(uutc_map[0], uutc_map[1])
 
+        time = np.linspace(uutc_map[0],
+                           uutc_map[1]-1000000/mat['sampling_frequency'],
+                           mat['samples'].shape[1])
+        time = np.array(time, dtype=np.int64)
+
         output = []
         for ch in channel_map:
             idx = mat['channel_names'].index(ch)
             output.append(mat['samples'][idx, :])
-        return output
+        return output,time
 
-    def get_full_matrix(self):
-        bi = self.read_ts_channel_basic_info()
-        self.session.set_channel_inactive('all')
-        self.session.set_channel_active('all')
-        rchan = bi[0]['name']
-        self.session.set_reference_channel(rchan)
-        mat = self.session.get_matrix_by_time(bi[0]['start_time'], bi[0]['end_time'])
-        time = np.linspace(bi[0]['start_time'], bi[0]['end_time'] - (bi[0]['end_time']-bi[0]['start_time'])/mat['samples'].shape[1], mat['samples'].shape[1])
-        time = np.array(time, dtype=np.int64)
-        return mat['samples'], time, mat['channel_names'], mat['sampling_frequency']
 
 
 if __name__ == "__main__":

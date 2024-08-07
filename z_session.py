@@ -71,13 +71,14 @@ class Zsession:
         if not exist_ok and chunk_pth.exists():
             raise Exception(f"Chunk already exists: {chunk_pth}!")
 
-        self.session_metadata['chunks'].append(str(f"{segment_name}/" + f"{channel_metadata['name']}.zdat"))
+        #self.session_metadata['chunks'].append(str(f"{segment_name}/" + f"{channel_metadata['name']}.zdat"))
+
         if channel_metadata['name'] not in self.session_metadata['channels']:
             self.session_metadata['channels'].append(channel_metadata['name'])
         if segment_name not in [x['segment'] for x in self.session_metadata['segments']]:
-            self.session_metadata['segments'].append({'segment':segment_name,
-                                                      'uutc_start':channel_metadata['uutc_start'],
-                                                      'uutc_end':channel_metadata['uutc_end']})
+            self.session_metadata['segments'].append({'segment':str(segment_name),
+                                                      'uutc_start':int(channel_metadata['uutc_start']),
+                                                      'uutc_end':int(channel_metadata['uutc_end'])})
 
         channel_metadata['compressed_data'], channel_metadata['original_md5'], channel_metadata['compressed_md5'] = compress_array(data)
         with open(str(chunk_pth), 'wb') as f:
