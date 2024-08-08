@@ -19,7 +19,7 @@ def iter_segments(sess, chunk_size_samples=5000*60):
             if idx1 > data.shape[1]:
                 idx1 = data.shape[1]-1
 
-            uutc_end = time[idx1]
+            uutc_end = time[idx1-1]
             data_chunk = data[0,idx0:idx1]
             yield ch,data_chunk,fsamp,uutc_start,uutc_end
 

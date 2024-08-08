@@ -13,9 +13,10 @@ class Zsession:
         self.path = pathlib.Path(path) if path is not None else None
         self.write=write
         self.session_metadata = dict()
-        self.session_metadata['chunks'] = list()
         self.session_metadata['channels'] = list()
         self.session_metadata['segments'] = list()
+        self.session_metadata['uutc_start'] = 0
+        self.session_metadata['uutc_end'] = 0
 
 
     def __enter__(self):
@@ -73,12 +74,16 @@ class Zsession:
 
         #self.session_metadata['chunks'].append(str(f"{segment_name}/" + f"{channel_metadata['name']}.zdat"))
 
-        if channel_metadata['name'] not in self.session_metadata['channels']:
-            self.session_metadata['channels'].append(channel_metadata['name'])
+        if str(channel_metadata['name']) not in [x['name'] for x in self.session_metadata['channels']]:
+            self.session_metadata['channels'].append({'name':str(channel_metadata['name']),
+                                                      'fsamp':int(channel_metadata['fsamp'])})
         if str(segment_name) not in [x['segment'] for x in self.session_metadata['segments']]:
             self.session_metadata['segments'].append({'segment':str(segment_name),
                                                       'uutc_start':int(channel_metadata['uutc_start']),
                                                       'uutc_end':int(channel_metadata['uutc_end'])})
+
+        self.session_metadata['uutc_start'] = min(self.session_metadata['segments'], key=lambda x: x['uutc_start'])['uutc_start']
+        self.session_metadata['uutc_end'] = max(self.session_metadata['segments'], key=lambda x: x['uutc_end'])['uutc_end']
 
         channel_metadata['compressed_data'], channel_metadata['original_md5'], channel_metadata['compressed_md5'] = compress_array(data)
         with open(str(chunk_pth), 'wb') as f:
@@ -100,7 +105,19 @@ class Zsession:
             yield data
 
     def read_ts_channel_basic_info(self):
-        return self.session_metadata
+        output = []
+        for ch in self.session_metadata['channels']:
+            output.append({'name': ch['name'],
+                           'fsamp': ch['fsamp'],
+                           'nsamp': np.nan,
+                           'ufact': 1,
+                           'unit': 'raw',
+                           'start_time': self.session_metadata['uutc_start'],
+                           'end_time': self.session_metadata['uutc_end'],
+                           'channel_description': '',
+                           'timezone': 0})
+
+        return output
 
 
     def read_ts_channels_uutc(self,channel_map, uutc_map):
@@ -109,6 +126,9 @@ class Zsession:
 
 
 class TestZsession(unittest.TestCase):
+    def setUp(self):
+        self.file = "test_session.zses"
+        self.file = "/Users/pnejedly/Documents/iEEG/sub-032_ses-001_task-rest_run-01_ieeg.zses"
 
     def test_new(self):
         with Zsession.new("test_session.zses", exist_ok=True) as zses:
@@ -124,15 +144,14 @@ class TestZsession(unittest.TestCase):
                                    exist_ok=True)
 
     def test_open(self):
-        file = "test_session.zses"
-        file = "/Users/pnejedly/Documents/iEEG/sub-032_ses-001_task-rest_run-01_ieeg.zses"
-        zses = Zsession.open(file)
+        zses = Zsession.open(self.file)
         for data in zses.iter_chunks(hash_check=True):
             stop = 1
 
     def test_read_ts_channel_basic_info(self):
-        zses = Zsession.open("test_session.zses")
-        print(zses.read_ts_channel_basic_info())
+        zses = Zsession.open(self.file)
+        bi = zses.read_ts_channel_basic_info()
+        stop = 1
 
     def test_iter_chunks(self):
         zses = Zsession.open("test_session.zses")
