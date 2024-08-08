@@ -75,7 +75,7 @@ class Zsession:
 
         if channel_metadata['name'] not in self.session_metadata['channels']:
             self.session_metadata['channels'].append(channel_metadata['name'])
-        if segment_name not in [x['segment'] for x in self.session_metadata['segments']]:
+        if str(segment_name) not in [x['segment'] for x in self.session_metadata['segments']]:
             self.session_metadata['segments'].append({'segment':str(segment_name),
                                                       'uutc_start':int(channel_metadata['uutc_start']),
                                                       'uutc_end':int(channel_metadata['uutc_end'])})
@@ -124,7 +124,9 @@ class TestZsession(unittest.TestCase):
                                    exist_ok=True)
 
     def test_open(self):
-        zses = Zsession.open("test_session.zses")
+        file = "test_session.zses"
+        file = "/Users/pnejedly/Documents/iEEG/sub-032_ses-001_task-rest_run-01_ieeg.zses"
+        zses = Zsession.open(file)
         for data in zses.iter_chunks(hash_check=True):
             stop = 1
 

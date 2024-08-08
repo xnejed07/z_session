@@ -24,7 +24,7 @@ def iter_segments(sess, chunk_size_samples=5000*60):
             yield ch,data_chunk,fsamp,uutc_start,uutc_end
 
 if __name__ == "__main__":
-    file = "/Users/pnejedly/Documents/sub-146_ses-001_task-rest_run-01_ieeg.medd"
+    file = "/Users/pnejedly/Documents/iEEG/sub-032_ses-001_task-rest_run-01_ieeg.medd"
     sess = MedSessionWrapper(file, "bemena")
 
 

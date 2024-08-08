@@ -16,7 +16,7 @@ class MedSessionWrapper:
             ch = ch['metadata']
             output.append({'name': ch['channel_name'],
                            'fsamp': ch['sampling_frequency'],
-                           'nsamp': np.NaN,
+                           'nsamp': np.nan,
                            'ufact': 1,
                            'unit': 'uV',  # can be loaded from med info, but so far we have uV only
                            'start_time': ch['recording_time_offset'] + ch['start_time'],
