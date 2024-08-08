@@ -46,6 +46,7 @@ class Zsession:
         zses = Zsession(path,write=write)
         with open(str(zses.path / "metadata.json"), 'r') as f:
             zses.session_metadata = json.load(f)
+        zses.session_metadata['segments'] = sorted(zses.session_metadata['segments'],key=lambda x: x['uutc_start'])
         return zses
 
     def new_chunk(self,segment_name,channel_metadata,data,exist_ok=False):
@@ -92,6 +93,20 @@ class Zsession:
 
 
 
+    def read_chunk(self,segment_name,channel_name,hash_check=False):
+        chunk_pth = self.path / str(segment_name) / f"{channel_name}.zdat"
+        if not chunk_pth.exists():
+            raise Exception(f"Chunk does not exist: {chunk_pth}!")
+        with open(str(chunk_pth), 'rb') as f:
+            data = f.read()
+            data = bson.loads(data)
+            data['data'] = decompress_array(data['compressed_data'])
+            del data['compressed_data']
+        if hash_check:
+            if hashlib.md5(data['data']).hexdigest() != data['original_md5']:
+                raise Exception("MD5 hash check failed!")
+        return data
+
     def iter_chunks(self,hash_check=False):
         for chunk in glob.glob(str(self.path / "**/*.zdat"),recursive=True):
             with open(chunk, 'rb') as f:
@@ -121,7 +136,20 @@ class Zsession:
 
 
     def read_ts_channels_uutc(self,channel_map, uutc_map):
-        pass
+        output = []
+        for ch in channel_map:
+            selected_segments = []
+            for seg in self.session_metadata['segments']:
+                if (seg['uutc_end'] >= uutc_map[0]) and (seg['uutc_start'] <= uutc_map[1]):
+                    selected_segments.append(self.read_chunk(segment_name=seg['segment'],channel_name=ch,hash_check=False))
+            ts_data = np.concatenate([s['data'] for s in selected_segments])
+            ts_time = np.linspace(selected_segments[0]['uutc_start'],
+                                  selected_segments[-1]['uutc_end'],
+                                  ts_data.shape[0])
+            idx = np.where((ts_time >= uutc_map[0]) & (ts_time < uutc_map[1]))[0]
+            output.append(ts_data[idx])
+
+        return np.array(output)
 
 
 
@@ -151,6 +179,14 @@ class TestZsession(unittest.TestCase):
     def test_read_ts_channel_basic_info(self):
         zses = Zsession.open(self.file)
         bi = zses.read_ts_channel_basic_info()
+        stop = 1
+
+    def test_read_ts_channels_uutc(self):
+        zses = Zsession.open(self.file)
+        bi = zses.read_ts_channel_basic_info()
+        channel = bi[0]['name']
+        data = zses.read_ts_channels_uutc(channel_map=[channel],
+                                          uutc_map=[bi[0]['start_time'], bi[0]['end_time']])
         stop = 1
 
     def test_iter_chunks(self):
