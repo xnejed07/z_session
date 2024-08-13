@@ -103,7 +103,10 @@ class Zsession:
         with open(str(chunk_pth), 'rb') as f:
             data = f.read()
             data = bson.loads(data)
-            data['data'] = decompress_array(data['compressed_data'])
+            dtype = None
+            dtype = np.int64 if data['dtype'] == 'int64' else dtype
+            dtype = np.float64 if data['dtype'] == 'float64' else dtype
+            data['data'] = decompress_array(data['compressed_data'], dtype=dtype, shape=-1)
             del data['compressed_data']
         if hash_check:
             if hashlib.md5(data['data']).hexdigest() != data['original_md5']:
@@ -115,7 +118,10 @@ class Zsession:
             with open(chunk, 'rb') as f:
                 data = f.read()
                 data = bson.loads(data)
-                data['data'] = decompress_array(data['compressed_data'])
+                dtype = None
+                dtype = np.int64 if data['dtype'] == 'int64' else dtype
+                dtype = np.float64 if data['dtype'] == 'float64' else dtype
+                data['data'] = decompress_array(data['compressed_data'],dtype=dtype,shape=-1)
                 del data['compressed_data']
                 if hash_check:
                     if hashlib.md5(data['data']).hexdigest() != data['original_md5']:

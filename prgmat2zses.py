@@ -3,8 +3,10 @@ import numpy as np
 from convertors.prg_mat.PrgMat import *
 from z_session import Zsession
 import glob
+import matplotlib.pyplot as plt
 
-def iter_segments(sess, chunk_size_samples=250*60):
+
+def iter_segments(sess, chunk_size_samples=250*60*60):
     bi = sess.read_ts_channel_basic_info()
     channels = [k['name'] for k in bi]
     uutc_start_time = bi[0]['start_time']
@@ -13,7 +15,11 @@ def iter_segments(sess, chunk_size_samples=250*60):
     for ch in channels:
         print(ch)
         data,time = sess.read_ts_channels_uutc(channel_map=[ch],uutc_map=[uutc_start_time,uutc_stop_time])
-        data = np.array(data)
+        plt.plot(data[0][:250*10])
+        plt.show()
+        data = np.array(data,dtype=np.float64)
+        plt.plot(data[0][:250*10])
+        plt.show()
         for idx0 in range(0,data.shape[1],chunk_size_samples):
             idx1 = idx0 + chunk_size_samples
             uutc_start = time[idx0]
