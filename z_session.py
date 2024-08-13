@@ -7,6 +7,7 @@ import glob
 import bson
 import hashlib
 import unittest
+from tqdm import tqdm
 
 class Zsession:
     def __init__(self, path=None, write=False):
@@ -47,6 +48,8 @@ class Zsession:
         with open(str(zses.path / "metadata.json"), 'r') as f:
             zses.session_metadata = json.load(f)
         zses.session_metadata['segments'] = sorted(zses.session_metadata['segments'],key=lambda x: x['uutc_start'])
+        zses.session_metadata['uutc_start_date'] = datetime.utcfromtimestamp(zses.session_metadata['uutc_start']/1000000)
+        zses.session_metadata['uutc_end_date'] = datetime.utcfromtimestamp(zses.session_metadata['uutc_end']/1000000)
         return zses
 
     def new_chunk(self,segment_name,channel_metadata,data,exist_ok=False):
@@ -151,6 +154,10 @@ class Zsession:
 
         return np.array(output)
 
+    def integrity_check(self):
+        for data in tqdm(self.iter_chunks(hash_check=True)):
+            stop = 1
+
 
 
 class TestZsession(unittest.TestCase):
@@ -193,6 +200,8 @@ class TestZsession(unittest.TestCase):
         zses = Zsession.open("test_session.zses")
         for data in zses.iter_chunks(hash_check=True):
             stop = 1
+
+
 
 
 
